@@ -1,0 +1,15 @@
+Import('*')
+
+env.Append(CPPPATH = ['#/src'])
+
+# Source
+src = ['UnitMetricsTest.cpp', '../src/fah/client/UnitMetrics.cpp']
+
+# Test binary
+tests = env.Program('run-tests', src)
+
+# Run tests
+test_run = env.Command('test-run', tests, '${SOURCE}')
+Alias('test', test_run)
+
+Default(tests)

@@ -1,0 +1,104 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: fah-client-bastet
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y scons git build-essential fakeroot libssl-dev zlib1g-dev libbz2-dev liblz4-dev libsystemd-dev cppcheck
+
+    - name: Run Cppcheck
+      run: |
+        cppcheck --enable=all --suppress=missingInclude --output-file=cppcheck.txt fah-client-bastet/src
+
+    - name: Clone cbang
+      run: |
+        git clone https://github.com/cauldrondevelopmentllc/cbang
+        # Note: In a real scenario, you might want to checkout a specific tag
+        # matching what the project expects, e.g., 'bastet-v8'
+
+    - name: Build cbang
+      run: |
+        export CBANG_HOME=$GITHUB_WORKSPACE/cbang
+        scons -C cbang
+
+    - name: Build fah-client-bastet
+      run: |
+        export CBANG_HOME=$GITHUB_WORKSPACE/cbang
+        scons -C fah-client-bastet
+
+    - name: Run unit tests
+      run: |
+        export CBANG_HOME=$GITHUB_WORKSPACE/cbang
+        scons -C fah-client-bastet test
+
+    - name: Run Python tests (fahctl)
+      run: |
+        pip install websocket-client
+        export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE/fah-client-bastet
+        python3 fah-client-bastet/tests/test_fahctl.py
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: fah-client-bastet
+
+    - name: Set up Python for SCons
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install SCons
+      run: pip install scons
+
+    - name: Clone cbang
+      run: |
+        git clone https://github.com/cauldrondevelopmentllc/cbang
+
+    - name: Build cbang
+      run: |
+        $env:CBANG_HOME = "$(Get-Location)/cbang"
+        scons -C cbang
+
+    - name: Build fah-client-bastet
+      run: |
+        $env:CBANG_HOME = "$(Get-Location)/cbang"
+        scons -C fah-client-bastet
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: fah-client-bastet
+
+    - name: Install dependencies
+      run: brew install scons
+
+    - name: Clone cbang
+      run: |
+        git clone https://github.com/cauldrondevelopmentllc/cbang
+
+    - name: Build cbang
+      run: |
+        export CBANG_HOME=$PWD/cbang
+        scons -C cbang
+
+    - name: Build fah-client-bastet
+      run: |
+        export CBANG_HOME=$PWD/cbang
+        scons -C fah-client-bastet

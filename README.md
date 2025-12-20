@@ -1,116 +1,111 @@
-Folding@Home Desktop Client
-===========================
+# Folding@home Client
 
-Folding@home is a distributed computing project -- people from
-throughout the world download and run software to band together to
-make one of the largest supercomputers in the world. Every computer
-takes the project closer to our goals. Folding@home uses novel
-computational methods, coupled to distributed computing, to simulate
-problems millions of times more challenging than previously achieved.
+[![Build Status](https://github.com/foldingathome/fah-client-bastet/actions/workflows/build.yml/badge.svg)](https://github.com/foldingathome/fah-client-bastet/actions)
+[![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey.svg)]()
 
-Protein folding is linked to disease, such as Alzheimer's, ALS,
-Huntington's, Parkinson's disease, and many Cancers.
+The **Folding@home Client** allows you to donate your computer's unused processing power to help scientists study proteins and find cures for diseases like Cancer, ALS, Parkinson's, and Alzheimer's.
 
-Moreover, when proteins do not fold correctly (i.e. "misfold"), there
-can be serious consequences, including many well known diseases, such
-as Alzheimer's, Mad Cow (BSE), CJD, ALS, Huntington's, Parkinson's
-disease, and many Cancers and cancer-related syndromes.
+This repository (`fah-client-bastet`) contains the open-source **backend** of the client software. It manages the download, execution, and upload of scientific work units.
 
-# What is protein folding?
-Proteins are biology's workhorses -- its "nanomachines." Before
-proteins can carry out these important functions, they assemble
-themselves, or "fold." The process of protein folding, while critical
-and fundamental to virtually all of biology, in many ways remains a
-mystery.
+The frontend interface resides in the [fah-web-client-bastet](https://github.com/foldingathome/fah-web-client-bastet) repository.
 
-# This software
-This repository contains a new [Open-Source](https://opensource.org/osd)
-version of the Folding@home client software.  The complete client software
-consists of a frontend and a backend.  This repository contains the backend.
-The frontend is in a separate repository at
-[fah-web-client-bastet](https://github.com/foldingathome/fah-web-client-bastet).
-The backend can be configured to run on its own without any user interaction.
-The frontend is a web application which normally will run at
-https://app.foldingathome.org/ but can also be run locally for testing and
-development purposes.
+---
 
-# Quick Start for Debian Linux
+## 🚀 Features
 
-(see the [BUILDING-RPM.md](BUILDING-RPM.md) file for instructions on how to build the RPM package)
+* **High Performance**: Efficiently utilizes CPU and GPU resources.
+* **Cross-Platform**: Runs natively on Linux, Windows, and macOS.
+* **Secure**: Validates all work units with digital signatures.
+* **Controllable**: Comprehensive remote control interface via WebSocket.
 
-## Install the Prerequisites
-```
+## 🛠️ Build & Install
+
+### Prerequisites
+
+You need `scons`, `git`, and a C++ compiler (GCC, Clang, or MSVC).
+
+**Debian/Ubuntu:**
+
+```bash
 sudo apt update
-sudo apt install -y scons git npm build-essential fakeroot libssl-dev zlib1g-dev libbz2-dev liblz4-dev libsystemd-dev
+sudo apt install -y scons git build-essential libssl-dev zlib1g-dev libbz2-dev liblz4-dev
 ```
 
-## Get the code
-```
-git clone https://github.com/cauldrondevelopmentllc/cbang
-git clone https://github.com/foldingathome/fah-client-bastet
-git clone https://github.com/foldingathome/fah-web-client-bastet
-```
+### Building form Source
 
-## Build a specific version (Optional)
-To checkout the code for a specific version of the client run:
+1. **Clone the repositories:**
 
-```
-git -C cbang checkout bastet-v<version>
-git -C fah-client-bastet checkout v<version>
-git -C fah-web-client-bastet checkout v<version>
-```
+    ```bash
+    git clone https://github.com/cauldrondevelopmentllc/cbang
+    git clone https://github.com/foldingathome/fah-client-bastet
+    ```
 
-Where ``<version>`` is a version number.
+2. **Compile:**
 
-Run ``git -C fah-client-bastet tag`` to list available version numbers.
+    ```bash
+    export CBANG_HOME=$PWD/cbang
+    scons -C cbang
+    scons -C fah-client-bastet
+    ```
 
-## Build the Folding@home Client
-```
-export CBANG_HOME=$PWD/cbang
-scons -C cbang
-scons -C fah-client-bastet
-scons -C fah-client-bastet package
-```
+3. **Package (Optional):**
 
-## Install the package
-The last build step builds the Debian package.  You can then install it like this:
+    ```bash
+    scons -C fah-client-bastet package
+    ```
 
-```
-sudo apt install ./fah-client-bastet/fah-client_<version>_amd64.deb
+### Running the Client
+
+After building, you can run the client directly:
+
+```bash
+./fah-client-bastet/fah-client --help
 ```
 
-Where ``<version>`` is the software version number.
+---
 
-Folding@home Client older than v8 will be automatically removed.
+## 🧪 Testing
 
-## Folding@home Client Service
-After installation, the service runs and will automatically restart on startup.
+We maintain a suite of automated tests to ensure reliability.
 
-**File storage locations:**
-- Logs: `/var/log/fah-client`
-- Data: `/var/lib/fah-client`
+### Unit Tests (C++)
 
-Related service commands for **Status, Start, Stop, Restart:**
-```
-systemctl status --no-pager -l fah-client
-sudo systemctl start fah-client
-sudo systemctl stop fah-client
-sudo systemctl restart fah-client
+Run the core logic tests using `scons`:
+
+```bash
+scons -C fah-client-bastet test
 ```
 
-NOTE: If the Folding@home Client is not being run as a service and is manually
-run with `fah-client` in a terminal window, the data and log folders will be
-created in the working directory where it is run from.
+### CLI Tests (Python)
 
-## Start the development web server
-Use these commands to run your own frontend server for testing purposes.  In
-production, this code will run at https://app.foldingathome.org/.
+Verify the `fahctl` command-line tool:
 
-```
-cd fah-web-client-bastet
-npm i
-npm run dev
+```bash
+pip install websocket-client
+export PYTHONPATH=$PYTHONPATH:$(pwd)/fah-client-bastet
+python3 fah-client-bastet/tests/test_fahctl.py
 ```
 
-With the development server running, open http://localhost:3000/ in a browser to
-view the client frontend.
+---
+
+## 📂 Directory Structure
+
+* `src/`: Core C++ source code.
+  * `src/fah/client/`: Main client logic (Unit management, Networking).
+* `tests/`: Unit and integration tests.
+* `scripts/`: Helper scripts, including `fahctl`.
+* `install/`: Platform-specific installer files (NSIS, Debian control, etc.).
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read `COMPILING.md` (if available) and ensure your code follows our style guidelines:
+
+* **Formatting**: We use `.clang-format` (Google style).
+* **Docs**: Public APIs should have Doxygen comments.
+
+## 📄 License
+
+This software is distributed under the [GNU General Public License v3.0](LICENSE).

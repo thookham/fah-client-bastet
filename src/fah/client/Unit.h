@@ -29,6 +29,7 @@
 #pragma once
 
 #include "UnitState.h"
+#include "UnitMetrics.h"
 
 #include <cbang/json/Observable.h>
 #include <cbang/event/Event.h>
@@ -50,6 +51,14 @@ namespace FAH {
     class CoreProcess;
     class Config;
 
+    /**
+     * @brief Represents a single Folding@home Work Unit (WU).
+     * 
+     * The Unit class manages the state machine of a work unit, from assignment
+     * to download, core execution, result upload, and final cleanup.
+     * 
+     * It leverages UnitMetrics for timing and progress calculations.
+     */
     class Unit :
       public cb::JSON::ObservableDict, public cb::HTTP::Enum,
       public UnitState::Enum {
@@ -80,14 +89,7 @@ namespace FAH {
       int      cs          = -1;
       uint32_t runningCPUs = 0;
 
-      uint64_t processStartTime = 0; // Core process start time
-      uint64_t lastSkewTimer    = 0; // For detecting clock skew
-      int64_t  clockSkew        = 0; // Due to sleeping or clock changes
-
-      uint64_t lastKnownDone                  = 0;
-      uint64_t lastKnownTotal                 = 0;
-      uint64_t lastKnownProgressUpdate        = 0;
-      uint64_t lastKnownProgressUpdateRunTime = 0;
+      UnitMetrics metrics;
 
       Unit(App &app);
 
@@ -141,8 +143,20 @@ namespace FAH {
       bool isFinished() const;
       bool isExpired() const;
 
+      /**
+       * @brief Triggers the next state transition in the state machine.
+       * @param secs Optional delay in seconds before the next update.
+       */
       void triggerNext(double secs = 0);
+
+      /**
+       * @brief Gracefully terminates the work unit and prepares for cleanup.
+       */
       void dumpWU();
+
+      /**
+       * @brief Persists the current unit state and data to the local database.
+       */
       void save();
 
     protected:

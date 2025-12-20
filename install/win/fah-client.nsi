@@ -116,6 +116,7 @@ Page custom OnInstallPageEnter OnInstallPageLeave
 !include MultiLang.nsh
 
 RequestExecutionLevel admin
+ManifestDPIAware true
 
 
 ; Sections

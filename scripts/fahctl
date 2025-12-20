@@ -18,56 +18,60 @@ except Exception as e:
   sys.exit(1)
 
 
-# Parse args
-epilog = '''\
+def main():
+  # Parse args
+  epilog = '''\
 Examples:
   fahctl fold
   fahctl finish
   fahctl pause
 '''
 
-parser = argparse.ArgumentParser(description = __doc__,
-  formatter_class = argparse.RawDescriptionHelpFormatter, epilog = epilog)
+  parser = argparse.ArgumentParser(description = __doc__,
+    formatter_class = argparse.RawDescriptionHelpFormatter, epilog = epilog)
 
-parser.add_argument('command',
-                    choices = ['fold', 'pause', 'finish', 'state', 'groups'],
-                    help = 'The command to send to the client')
-parser.add_argument('group', nargs = '?', metavar='GROUP',
-                    help = 'Optional target resource group name')
-parser.add_argument('-a', '--address', default = '127.0.0.1:7396',
-                    help = 'Client address (default: %(default)s)')
+  parser.add_argument('command',
+                      choices = ['fold', 'pause', 'finish', 'state', 'groups'],
+                      help = 'The command to send to the client')
+  parser.add_argument('group', nargs = '?', metavar='GROUP',
+                      help = 'Optional target resource group name')
+  parser.add_argument('-a', '--address', default = '127.0.0.1:7396',
+                      help = 'Client address (default: %(default)s)')
 
-args = parser.parse_args()
+  args = parser.parse_args()
 
-u = urlparse('ws://' + args.address)
-host = u.hostname or '127.0.0.1'
-port = u.port or 7396
-url = f'ws://{host}:{port}/api/websocket'
+  u = urlparse('ws://' + args.address)
+  host = u.hostname or '127.0.0.1'
+  port = u.port or 7396
+  url = f'ws://{host}:{port}/api/websocket'
 
-# Connect
-try:
-  ws = create_connection(url)
-except Exception as e:
-  print(f'{e}: {url}', file = sys.stderr)
-  sys.exit(1)
+  # Connect
+  try:
+    ws = create_connection(url)
+  except Exception as e:
+    print(f'{e}: {url}', file = sys.stderr)
+    sys.exit(1)
 
-data_str = ws.recv()
-data = json.loads(data_str)
-groups = list(data.get("groups", {}).keys())
+  data_str = ws.recv()
+  data = json.loads(data_str)
+  groups = list(data.get("groups", {}).keys())
 
-if args.group is not None and args.group not in groups:
-  print(f'Group "{args.group}" does not exist', file = sys.stderr)
-  sys.exit(1)
-
-
-# Send command
-if args.command == 'state': print(data_str)
-elif args.command == 'groups': print(json.dumps(groups))
-else:
-  msg = dict(cmd = 'state', state = args.command)
-  if args.group is not None: msg['group'] = args.group
-  ws.send(json.dumps(msg))
+  if args.group is not None and args.group not in groups:
+    print(f'Group "{args.group}" does not exist', file = sys.stderr)
+    sys.exit(1)
 
 
-# Close
-ws.close()
+  # Send command
+  if args.command == 'state': print(data_str)
+  elif args.command == 'groups': print(json.dumps(groups))
+  else:
+    msg = dict(cmd = 'state', state = args.command)
+    if args.group is not None: msg['group'] = args.group
+    ws.send(json.dumps(msg))
+
+
+  # Close
+  ws.close()
+
+if __name__ == '__main__':
+  main()

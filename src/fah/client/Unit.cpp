@@ -255,81 +255,38 @@ bool Unit::hasGPU(const string &id) const {
 
 
 uint64_t Unit::getRunTimeDelta() const {
-  return processStartTime ? Time::now() - processStartTime - clockSkew : 0;
+  return metrics.getRunTimeDelta();
 }
 
 
 uint64_t Unit::getRunTime() const {
-  // Stored ``run_time`` is run time up to the end of the last run
-  int64_t runTime = getU64("run_time", 0);
-
-  // If core process is currently running, add accumulated time
-  runTime += getRunTimeDelta();
-
-  return 0 < runTime ? runTime : 0;
+  return metrics.getRunTime(getU64("run_time", 0));
 }
 
 
 uint64_t Unit::getRunTimeEstimate() const {
-  // If valid, use estimate provided by the WS
-  uint64_t estimate = data->selectU64("wu.data.estimate", 0);
-  if (estimate) return estimate;
-
-  // Make our own estimate
-  if (getKnownProgress() && lastKnownProgressUpdateRunTime)
-    return lastKnownProgressUpdateRunTime / getKnownProgress();
-
-  // Make a wild guess based on timeout or 1 day
-  return 0.2 * data->selectU64("assignment.data.timeout", Time::SEC_PER_DAY);
+  return metrics.getRunTimeEstimate(data);
 }
 
 
 double Unit::getEstimatedProgress() const {
   if (isFinished()) return has("error") ? 0 : 1;
-
-  // If the core process is not currently running, return saved "wu_progress"
-  if (!processStartTime || !lastKnownProgressUpdate)
-    return getNumber("wu_progress", 0);
-
-  // Get estimated progress since last update from core
-  double delta         = getRunTime() - lastKnownProgressUpdateRunTime;
-  double runtime       = getRunTimeEstimate();
-  double deltaProgress = (0 < delta && 0 < runtime) ? delta / runtime : 0;
-  if (0.01 < deltaProgress) deltaProgress = 0.01; // No more than 1%
-
-  double progress = getKnownProgress() + deltaProgress;
-  return progress < 1 ? progress : 1; // No more than 100%
+  return metrics.getEstimatedProgress(data, getU64("run_time", 0), getNumber("wu_progress", 0));
 }
 
 
 uint64_t Unit::getCreditEstimate() const {
-  uint64_t credit = data->selectU64("assignment.data.credit", 0);
-
-  // Compute bonus estimate
-  // Use request time to account for potential client/AS clock offset
-  // Note, if the client's clock has changed ``requested`` may be < now
-  uint64_t requested = Time::parse(data->selectString("request.data.time"));
-  uint64_t timeout   = data->selectU64("assignment.data.timeout",  0);
-  uint64_t deadline  = data->selectU64("assignment.data.deadline", 0);
-  int64_t  delta     = (int64_t)Time::now() - requested + getETA();
-
-  // No bonus after timeout
-  if (0 < delta && delta < (int64_t)timeout) {
-    double bonus = sqrt(0.75 * (double)deadline / delta); // Bonus formula
-    if (1 < bonus) credit *= bonus;
-  }
-
-  return credit;
+  return metrics.getCreditEstimate(data, getETA());
 }
 
 
 uint64_t Unit::getETA() const {
-  return getRunTimeEstimate() * (1 - getEstimatedProgress());
+  return metrics.getETA(data, getU64("run_time", 0), getNumber("wu_progress", 0));
 }
 
 
 uint64_t Unit::getPPD() const {
-  return (double)getCreditEstimate() / getRunTimeEstimate() * Time::SEC_PER_DAY;
+  return metrics.getPPD(getCreditEstimate(), getRunTimeEstimate());
 }
 
 
@@ -492,9 +449,8 @@ void Unit::processStarted(const SmartPointer<CoreProcess> &process) {
   auto pid = process->getPID();
   LOG_INFO(3, "Started FahCore on PID " << pid);
   this->process = process;
-  lastSkewTimer = processStartTime = Time::now();
-  lastKnownDone = lastKnownTotal = lastKnownProgressUpdate = clockSkew = 0;
-  insert("start_time", Time(processStartTime).toString());
+  metrics.processStarted();
+  insert("start_time", Time::now().toString());
   insert("pid", pid);
 }
 
@@ -503,40 +459,22 @@ void Unit::processEnded() {
   insert("run_time", getRunTime());
   erase("start_time");
   erase("pid");
-  processStartTime = 0;
+  metrics.processEnded(getU64("run_time", 0));
 }
 
 
 void Unit::skewTimer() {
-  uint64_t now = Time::now();
-
-  // Detect and adjust for clock skew
-  int64_t delta = (int64_t)now - lastSkewTimer;
-  if (data < 0 || 300 < delta) {
-    LOG_WARNING("Detected clock skew (" << TimeInterval(delta)
-                << "), I/O delay, laptop hibernation, other slowdown or "
-                "clock change noted, adjusting time estimates");
-    clockSkew += delta;
-  }
-
-  lastSkewTimer = now;
+  metrics.skewTimer();
 }
 
 
 double Unit::getKnownProgress() const {
-  return lastKnownTotal ? (double)lastKnownDone / lastKnownTotal : 0;
+  return metrics.getKnownProgress();
 }
 
 
 void Unit::updateKnownProgress(uint64_t done, uint64_t total) {
-  if (!total || total < done) return;
-
-  if (lastKnownDone != done || lastKnownTotal != total) {
-    lastKnownDone                  = done;
-    lastKnownTotal                 = total;
-    lastKnownProgressUpdate        = Time::now();
-    lastKnownProgressUpdateRunTime = getRunTime();
-  }
+  metrics.updateKnownProgress(done, total);
 }
 
 

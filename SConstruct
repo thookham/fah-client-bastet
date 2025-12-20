@@ -60,6 +60,9 @@ Export('env')
 client = SConscript('src/client.scons', variant_dir = 'build', duplicate = 0)
 Default(client)
 
+# Tests
+SConscript('tests/tests.scons', variant_dir = 'build/tests', duplicate = 0)
+
 # HideConsole
 hide_console = None
 if env['PLATFORM'] == 'win32' or int(env.get('cross_mingw', 0)):

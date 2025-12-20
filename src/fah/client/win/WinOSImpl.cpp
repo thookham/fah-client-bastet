@@ -350,16 +350,22 @@ void WinOSImpl::updateIcon() {
 
 
 void WinOSImpl::setSysTray(int icon, LPCTSTR tip) {
-  if (iconCurrent == icon) return;
-  iconCurrent = icon;
+  bool iconChanged = iconCurrent != icon;
+  bool tipChanged = tip && strcmp(notifyIconData.szTip, tip) != 0;
 
-  notifyIconData.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(icon));
+  if (!iconChanged && !tipChanged) return;
+
+  if (iconChanged) {
+    iconCurrent = icon;
+    notifyIconData.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(icon));
+  }
 
   if (tip) {
     strncpy(notifyIconData.szTip, tip, sizeof(notifyIconData.szTip));
     notifyIconData.uFlags |= NIF_TIP;
-
-  } else notifyIconData.uFlags &= ~NIF_TIP;
+  } else {
+    notifyIconData.uFlags &= ~NIF_TIP;
+  }
 
   Shell_NotifyIcon(NIM_MODIFY, &notifyIconData);
 }
