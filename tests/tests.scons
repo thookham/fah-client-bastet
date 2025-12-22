@@ -3,7 +3,11 @@ Import('*')
 env.Append(CPPPATH = ['#/src'])
 
 # Source
-src = ['UnitMetricsTest.cpp', '../src/fah/client/UnitMetrics.cpp']
+src = [
+    'UnitMetricsTest.cpp', '../src/fah/client/UnitMetrics.cpp',
+    'GroupTest.cpp', '../src/fah/client/Group.cpp',
+    '../src/fah/client/App.cpp', '../src/fah/client/Config.cpp'
+]
 
 # Test binary
 tests = env.Program('run-tests', src)

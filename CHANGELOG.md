@@ -4,6 +4,7 @@ Folding@home Client Changelog
 ## v8.5.6 (Unreleased)
 
 - **Refactoring**: Decoupled `Unit.cpp` by extracting metric calculations into `UnitMetrics` class.
+- **Tests**: Added `GroupTest.cpp` to cover `FAH::Client::Group` logic.
 - **Infrastructure**: Added `.editorconfig` and `.clang-format` for code standardization.
 - **CI/CD**: Implemented GitHub Actions for multi-platform builds and static analysis (Cppcheck).
 - **Testing**: Added unit testing framework (`tests/`) using Catch2 and Python CLI tests.

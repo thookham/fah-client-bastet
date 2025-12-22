@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/foldingathome/fah-client-bastet/actions/workflows/build.yml/badge.svg)](https://github.com/foldingathome/fah-client-bastet/actions)
 [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey.svg)]()
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey.svg)](https://foldingathome.org/start-folding/)
 
 The **Folding@home Client** allows you to donate your computer's unused processing power to help scientists study proteins and find cures for diseases like Cancer, ALS, Parkinson's, and Alzheimer's.
 
@@ -76,6 +76,8 @@ Run the core logic tests using `scons`:
 ```bash
 scons -C fah-client-bastet test
 ```
+
+This now includes unit tests for `UnitMetrics` and `Group` logic.
 
 ### CLI Tests (Python)
 
